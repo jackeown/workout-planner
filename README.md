@@ -2,12 +2,16 @@
 
 A simple static GitHub Pages app for planning workout progression over time.
 
+**Live site:** https://jackeown.github.io/workout-planner/
+
 ## Features
 
 - Add exercise plans with current sets/reps and future target sets/reps
 - View a calendar with a recommended day-by-day progression
 - See the recommended plan for the selected day
 - Confirm workouts with a checkmark and track streaks per exercise
+- Reps shift automatically (up to 20%, tapering to 0%) whenever your set count changes, to offset the added or removed difficulty
+- Light/dark mode toggle that follows your OS preference by default and remembers your choice
 - All data persists in browser localStorage with no backend required
 - Movement tracker appears first and all sections are collapsible
 
@@ -27,8 +31,15 @@ Then visit `http://localhost:8000`.
 2. Open the repository settings.
 3. Go to Pages.
 4. Choose the default branch as the source and save.
-5. GitHub Pages will serve the site at a URL like `https://<username>.github.io/workout-planner/`.
+5. GitHub Pages will serve the site at a URL like `https://<username>.github.io/workout-planner/`. For this repo that is https://jackeown.github.io/workout-planner/.
+
+## Rep adjustments
+
+When a plan's set count increases, the suggested reps drop by up to 20% so total
+volume stays manageable; when the set count decreases, reps rise by up to 20% to
+keep the effort comparable. The adjustment tapers linearly and reaches 0% by the
+next set count change, or by the goal date — whichever comes first.
 
 ## Local storage
 
-The app stores all plans and workout completions in `localStorage` under a single key. Nothing leaves the browser.
+The app stores all plans, workout completions, and your theme choice in `localStorage`. Nothing leaves the browser.

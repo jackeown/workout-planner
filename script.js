@@ -1,5 +1,8 @@
 const STORAGE_KEY = 'workout-planner-v1';
 const COLLAPSE_STATE_KEY = 'workout-planner-collapse-state';
+const THEME_KEY = 'workout-planner-theme';
+const TEMPORARY_REP_ADJUSTMENT = 0.2;
+const DARK_MODE_QUERY = '(prefers-color-scheme: dark)';
 
 const form = document.getElementById('activity-form');
 const exerciseNameInput = document.getElementById('exercise-name');
@@ -15,6 +18,7 @@ const selectedDateLabel = document.getElementById('selected-date-label');
 const todayPlan = document.getElementById('today-plan');
 const prevMonthButton = document.getElementById('prev-month');
 const nextMonthButton = document.getElementById('next-month');
+const themeToggleButton = document.getElementById('theme-toggle');
 
 const today = new Date();
 const defaultTargetDate = addDays(today, 45);
@@ -85,6 +89,53 @@ function applyCollapseState() {
   });
 }
 
+function getStoredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    return stored === 'dark' || stored === 'light' ? stored : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function getSystemTheme() {
+  return window.matchMedia(DARK_MODE_QUERY).matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const isDark = theme === 'dark';
+
+  themeToggleButton.setAttribute('aria-pressed', String(isDark));
+  themeToggleButton.setAttribute('aria-label', `Switch to ${isDark ? 'light' : 'dark'} mode`);
+  themeToggleButton.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+  themeToggleButton.querySelector('.theme-toggle-label').textContent = isDark ? 'Light' : 'Dark';
+}
+
+function toggleTheme() {
+  const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+
+  try {
+    localStorage.setItem(THEME_KEY, nextTheme);
+  } catch (error) {
+    console.warn('Unable to save theme preference.', error);
+  }
+
+  applyTheme(nextTheme);
+}
+
+function setupTheme() {
+  applyTheme(getStoredTheme() || getSystemTheme());
+
+  themeToggleButton.addEventListener('click', toggleTheme);
+
+  window.matchMedia(DARK_MODE_QUERY).addEventListener('change', (event) => {
+    if (!getStoredTheme()) {
+      applyTheme(event.matches ? 'dark' : 'light');
+    }
+  });
+}
+
 function formatDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -147,13 +198,19 @@ function getSetProgressionEvents(activity) {
   const targetDate = parseDateKey(activity.targetDate);
   const totalDays = Math.max(1, diffInDays(startDate, targetDate));
   const setDelta = activity.targetSets - activity.currentSets;
-  const stepCount = Math.max(1, Math.abs(setDelta));
-  const direction = Math.sign(setDelta) || 1;
+  const stepCount = Math.abs(setDelta);
   const events = [];
+
+  if (stepCount === 0) {
+    return events;
+  }
+
+  const direction = Math.sign(setDelta);
 
   for (let step = 1; step <= stepCount; step += 1) {
     const progressRatio = step / (stepCount + 1);
-    const eventDate = addDays(startDate, Math.round(totalDays * progressRatio));
+    const dayOffset = Math.round(totalDays * progressRatio);
+    const eventDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + dayOffset);
     events.push({
       date: eventDate,
       direction,
@@ -166,23 +223,22 @@ function getSetProgressionEvents(activity) {
 
 function getTemporaryRepModifier(activity, dateKey) {
   const currentDate = parseDateKey(dateKey);
-  const startDate = new Date();
   const targetDate = parseDateKey(activity.targetDate);
   const events = getSetProgressionEvents(activity);
-  const dateList = events
+  const pastEvents = events
     .filter((event) => event.date <= currentDate)
     .sort((a, b) => a.date - b.date);
 
-  if (!dateList.length) {
+  if (!pastEvents.length) {
     return 0;
   }
 
-  const latestEvent = dateList[dateList.length - 1];
+  const latestEvent = pastEvents[pastEvents.length - 1];
   const nextEvent = events.find((event) => event.date > latestEvent.date) || { date: targetDate };
   const windowDays = Math.max(1, diffInDays(latestEvent.date, nextEvent.date));
-  const elapsed = Math.max(0, diffInDays(latestEvent.date, currentDate));
-  const decay = clamp(elapsed / windowDays, 0, 1);
-  const effect = 0.15 * (1 - decay);
+  const elapsedDays = Math.max(0, diffInDays(latestEvent.date, currentDate));
+  const remainingRatio = clamp(1 - elapsedDays / windowDays, 0, 1);
+  const effect = TEMPORARY_REP_ADJUSTMENT * remainingRatio;
 
   return latestEvent.direction >= 0 ? -effect : effect;
 }
@@ -245,6 +301,18 @@ function setTargetDateDefault() {
   targetDateInput.value = formatDateKey(defaultTargetDate);
 }
 
+function renderRepAdjustment(plan) {
+  if (!plan.repModifier) {
+    return '';
+  }
+
+  const percent = Math.round(Math.abs(plan.repModifier) * 100);
+  const setsUp = plan.repModifier < 0;
+  const label = setsUp ? 'Sets up · reps −' : 'Sets down · reps +';
+
+  return `<span class="rep-adjust ${setsUp ? '' : 'is-up'}">${label}${percent}%</span>`;
+}
+
 function renderPlanForSelectedDate() {
   const selectedDateText = new Date(`${appState.selectedDate}T12:00:00`);
   selectedDateLabel.textContent = selectedDateText.toLocaleDateString(undefined, {
@@ -279,6 +347,7 @@ function renderPlanForSelectedDate() {
           <div>
             <strong>${escapeHtml(activity.name)}</strong>
             <small>${activity.plan.sets} sets × ${activity.plan.reps} reps</small>
+            ${renderRepAdjustment(activity.plan)}
           </div>
           <button class="tiny-btn ${doneClass}" type="button" data-action="toggle-complete" data-id="${activity.id}">${doneButtonLabel}</button>
         </div>
@@ -567,6 +636,7 @@ nextMonthButton.addEventListener('click', () => {
 });
 
 setTargetDateDefault();
+setupTheme();
 setupCollapsibleSections();
 applyCollapseState();
 renderAll();
