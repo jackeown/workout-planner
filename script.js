@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'workout-planner-v1';
+const COLLAPSE_STATE_KEY = 'workout-planner-collapse-state';
 
 const form = document.getElementById('activity-form');
 const exerciseNameInput = document.getElementById('exercise-name');
@@ -41,6 +42,47 @@ function loadActivities() {
     console.warn('Unable to load saved workout data.', error);
     return [];
   }
+}
+
+function saveCollapseState() {
+  const state = {};
+  document.querySelectorAll('.collapsible-section').forEach((section) => {
+    const id = section.id;
+    const isCollapsed = section.classList.contains('collapsed');
+    if (id) {
+      state[id] = isCollapsed;
+    }
+  });
+  localStorage.setItem(COLLAPSE_STATE_KEY, JSON.stringify(state));
+}
+
+function loadCollapseState() {
+  const raw = localStorage.getItem(COLLAPSE_STATE_KEY);
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn('Unable to load collapse state.', error);
+    return {};
+  }
+}
+
+function applyCollapseState() {
+  const state = loadCollapseState();
+  document.querySelectorAll('.collapsible-section').forEach((section) => {
+    const id = section.id;
+    if (id && state[id] === true) {
+      section.classList.add('collapsed');
+      const button = section.querySelector('.section-toggle');
+      if (button) {
+        button.setAttribute('aria-expanded', 'false');
+        button.querySelector('.toggle-indicator').textContent = '+';
+      }
+    }
+  });
 }
 
 function formatDateKey(date) {
@@ -467,6 +509,7 @@ function setupCollapsibleSections() {
       const isCollapsed = section.classList.toggle('collapsed');
       button.setAttribute('aria-expanded', String(!isCollapsed));
       button.querySelector('.toggle-indicator').textContent = isCollapsed ? '+' : '−';
+      saveCollapseState();
     });
   });
 }
@@ -525,6 +568,7 @@ nextMonthButton.addEventListener('click', () => {
 
 setTargetDateDefault();
 setupCollapsibleSections();
+applyCollapseState();
 renderAll();
 
 window.addEventListener('storage', () => {
