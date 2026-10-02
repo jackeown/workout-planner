@@ -139,14 +139,14 @@ input:focus {
   gap: 12px;
 }
 
-.primary-btn, .secondary-btn, .ghost-btn, .tiny-btn {
+.primary-btn, .secondary-btn, .ghost-btn, .tiny-btn, .action-btn {
   border: 0;
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.primary-btn:hover, .secondary-btn:hover, .ghost-btn:hover, .tiny-btn:hover {
+.primary-btn:hover, .secondary-btn:hover, .ghost-btn:hover, .tiny-btn:hover, .action-btn:hover {
   transform: translateY(-1px);
 }
 
@@ -357,11 +357,146 @@ input:focus {
   align-items: center;
   gap: 10px;
   margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .activity-target {
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.activity-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+.edit-btn {
+  background: #e0e7ff;
+  color: var(--primary-dark);
+}
+
+.edit-btn:hover {
+  background: #c7d2ff;
+}
+
+.delete-btn {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.delete-btn:hover {
+  background: #fecaca;
+}
+
+.edit-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.edit-modal.hidden {
+  display: none;
+}
+
+.edit-modal-content {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
+}
+
+.edit-modal-header {
+  margin-bottom: 20px;
+}
+
+.edit-modal-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
+}
+
+.edit-modal-header p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.edit-modal-body {
+  margin-bottom: 20px;
+}
+
+.edit-baseline {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.edit-baseline-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.edit-baseline-value {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.edit-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-modal-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.edit-modal-actions button:hover {
+  transform: translateY(-1px);
+}
+
+.edit-modal-actions .save-btn {
+  background: var(--primary);
+  color: white;
+}
+
+.edit-modal-actions .save-btn:hover {
+  background: var(--primary-dark);
+}
+
+.edit-modal-actions .cancel-btn {
+  background: var(--border);
+  color: var(--text);
 }
 
 .empty-state {
@@ -403,5 +538,9 @@ input:focus {
   .activity-card-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .edit-modal-content {
+    width: 95%;
   }
 }

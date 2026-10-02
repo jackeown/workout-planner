@@ -384,24 +384,74 @@ function deleteActivity(activityId) {
   renderAll();
 }
 
-function editActivity(activityId) {
+function showEditModal(activityId) {
   const activity = appState.activities.find((a) => a.id === activityId);
   if (!activity) return;
 
   const lastKnown = getLastKnownStats(activity);
+  const lastDateStr = formatDisplayDate(formatDateKey(lastKnown.date));
 
-  exerciseNameInput.value = activity.name;
-  currentSetsInput.value = lastKnown.sets;
-  currentRepsInput.value = lastKnown.reps;
-  targetDateInput.value = activity.targetDate;
-  targetSetsInput.value = activity.targetSets;
-  targetRepsInput.value = activity.targetReps;
+  const modal = document.createElement('div');
+  modal.className = 'edit-modal';
+  modal.innerHTML = `
+    <div class="edit-modal-content">
+      <div class="edit-modal-header">
+        <h2>${escapeHtml(activity.name)}</h2>
+        <p>Adjust your future goal. Your workout history stays intact.</p>
+      </div>
+      <div class="edit-modal-body">
+        <div class="edit-baseline">
+          <div class="edit-baseline-label">Starting from your last workout (${lastDateStr})</div>
+          <div class="edit-baseline-value">${lastKnown.sets} sets × ${lastKnown.reps} reps</div>
+        </div>
+        <label>
+          Target sets
+          <input type="number" min="1" step="1" value="${activity.targetSets}" class="edit-input-sets" />
+        </label>
+        <label>
+          Target reps
+          <input type="number" min="1" step="1" value="${activity.targetReps}" class="edit-input-reps" />
+        </label>
+        <label>
+          Target date
+          <input type="date" value="${activity.targetDate}" class="edit-input-date" min="${formatDateKey(addDays(today, 1))}" />
+        </label>
+      </div>
+      <div class="edit-modal-actions">
+        <button type="button" class="save-btn" data-action="save-edit" data-id="${activityId}">Save changes</button>
+        <button type="button" class="cancel-btn" data-action="cancel-edit">Cancel</button>
+      </div>
+    </div>
+  `;
 
-  appState.editingActivityId = activityId;
+  document.body.appendChild(modal);
 
-  // Scroll to form
-  document.getElementById('planner-panel').scrollIntoView({ behavior: 'smooth' });
-  exerciseNameInput.focus();
+  const closeModal = () => modal.remove();
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  modal.querySelector('[data-action="cancel-edit"]').addEventListener('click', closeModal);
+
+  modal.querySelector('[data-action="save-edit"]').addEventListener('click', () => {
+    const newTargetSets = Number(modal.querySelector('.edit-input-sets').value);
+    const newTargetReps = Number(modal.querySelector('.edit-input-reps').value);
+    const newTargetDate = modal.querySelector('.edit-input-date').value;
+
+    if (!newTargetDate || newTargetSets < 1 || newTargetReps < 1) {
+      alert('Please fill in all fields with valid values.');
+      return;
+    }
+
+    activity.targetSets = newTargetSets;
+    activity.targetReps = newTargetReps;
+    activity.targetDate = newTargetDate;
+
+    saveActivities();
+    closeModal();
+    renderAll();
+  });
 }
 
 function renderAll() {
@@ -437,22 +487,7 @@ form.addEventListener('submit', (event) => {
     return;
   }
 
-  if (appState.editingActivityId) {
-    // Update existing activity
-    const activity = appState.activities.find((a) => a.id === appState.editingActivityId);
-    if (activity) {
-      activity.name = payload.name.trim();
-      activity.currentSets = Number(payload.currentSets);
-      activity.currentReps = Number(payload.currentReps);
-      activity.targetDate = payload.targetDate;
-      activity.targetSets = Number(payload.targetSets);
-      activity.targetReps = Number(payload.targetReps);
-    }
-    appState.editingActivityId = null;
-  } else {
-    // Create new activity
-    appState.activities.push(createActivity(payload));
-  }
+  appState.activities.push(createActivity(payload));
 
   saveActivities();
   form.reset();
@@ -474,7 +509,7 @@ document.addEventListener('click', (event) => {
   } else if (action === 'delete') {
     deleteActivity(id);
   } else if (action === 'edit') {
-    editActivity(id);
+    showEditModal(id);
   }
 });
 
