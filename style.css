@@ -1,0 +1,374 @@
+:root {
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --panel-alt: #eef5ff;
+  --primary: #1d75d9;
+  --primary-dark: #0d5fbd;
+  --accent: #22b07d;
+  --text: #1f2937;
+  --muted: #667085;
+  --border: #dfe7f1;
+  --warning: #f7c95c;
+  --danger: #de5a5a;
+  --shadow: 0 10px 24px rgba(30, 64, 175, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Inter, "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #edf5ff 0%, var(--bg) 180px);
+  color: var(--text);
+}
+
+body {
+  padding: 32px 18px 48px;
+}
+
+button, input {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.topbar {
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+h1, h2, h3, p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) minmax(260px, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.form-panel label, .plan-panel label {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f9fbff;
+  color: var(--text);
+}
+
+input:focus {
+  outline: 2px solid rgba(29, 117, 217, 0.15);
+  border-color: var(--primary);
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.primary-btn, .secondary-btn, .ghost-btn, .tiny-btn {
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.primary-btn:hover, .secondary-btn:hover, .ghost-btn:hover, .tiny-btn:hover {
+  transform: translateY(-1px);
+}
+
+.primary-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
+  font-weight: 700;
+}
+
+.primary-btn:hover {
+  background: var(--primary-dark);
+}
+
+.plan-header, .list-header, .calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.plan-list, .activities-list {
+  display: grid;
+  gap: 12px;
+}
+
+.plan-item {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.plan-item strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.plan-item small {
+  color: var(--muted);
+}
+
+.secondary-btn, .tiny-btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+.tiny-btn {
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  min-width: 95px;
+}
+
+.secondary-btn.is-done,
+.tiny-btn.is-done {
+  background: #d9f3ea;
+  color: #146c4f;
+}
+
+.calendar-panel {
+  margin-bottom: 24px;
+}
+
+.weekday-row,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekday-row {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.weekday-row span {
+  padding: 0 4px;
+}
+
+.calendar-grid {
+  min-height: 420px;
+}
+
+.day-cell {
+  background: #f9fbff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-height: 120px;
+  padding: 8px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.day-cell.is-other-month {
+  opacity: 0.42;
+}
+
+.day-cell.is-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(29, 117, 217, 0.12);
+}
+
+.day-cell.is-today {
+  background: #edf5ff;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.day-events {
+  display: grid;
+  gap: 4px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.event-pill {
+  background: #dfeaff;
+  color: #1a3d77;
+  border-radius: 999px;
+  padding: 4px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-pill.done {
+  background: #dff7ed;
+  color: #146c4f;
+}
+
+.event-pill.goal {
+  background: #fff1ca;
+  color: #7a5d16;
+}
+
+.day-meta {
+  margin-top: auto;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.activity-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.activity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.activity-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.streak-badge {
+  background: #fff4d8;
+  color: #835408;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.activity-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #edf5ff;
+  color: var(--primary-dark);
+  border-radius: 999px;
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.activity-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-target {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.empty-state {
+  margin-top: 10px;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.ghost-btn {
+  background: #eef4ff;
+  color: var(--primary-dark);
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 840px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-grid {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 540px) {
+  body {
+    padding: 20px 12px 40px;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

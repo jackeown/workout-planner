@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workout Plan</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Workout planner</p>
+          <h1>Progression Calendar</h1>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel form-panel">
+          <h2>Add a movement</h2>
+          <form id="activity-form">
+            <label>
+              Exercise
+              <input id="exercise-name" type="text" placeholder="pushups" required />
+            </label>
+
+            <div class="two-col">
+              <label>
+                Current sets
+                <input id="current-sets" type="number" min="1" step="1" value="2" required />
+              </label>
+              <label>
+                Current reps
+                <input id="current-reps" type="number" min="1" step="1" value="10" required />
+              </label>
+            </div>
+
+            <div class="two-col">
+              <label>
+                Target date
+                <input id="target-date" type="date" required />
+              </label>
+              <label>
+                Target sets
+                <input id="target-sets" type="number" min="1" step="1" value="5" required />
+              </label>
+            </div>
+
+            <label>
+              Target reps
+              <input id="target-reps" type="number" min="1" step="1" value="30" required />
+            </label>
+
+            <button type="submit" class="primary-btn">Add plan</button>
+          </form>
+        </section>
+
+        <section class="panel plan-panel">
+          <div class="plan-header">
+            <div>
+              <p class="eyebrow">Selected day</p>
+              <h2 id="selected-date-label">Today</h2>
+            </div>
+          </div>
+          <div id="today-plan" class="plan-list"></div>
+        </section>
+      </main>
+
+      <section class="panel calendar-panel">
+        <div class="calendar-toolbar">
+          <button id="prev-month" class="ghost-btn" type="button">◀</button>
+          <h2 id="month-label">Month</h2>
+          <button id="next-month" class="ghost-btn" type="button">▶</button>
+        </div>
+
+        <div class="weekday-row">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </section>
+
+      <section class="panel list-panel">
+        <div class="list-header">
+          <h2>Movement tracker</h2>
+        </div>
+        <div id="activities-list" class="activities-list"></div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
