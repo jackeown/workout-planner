@@ -15,81 +15,95 @@
         </div>
       </header>
 
+      <section class="panel collapsible-section" id="tracker-panel">
+        <button class="section-toggle" type="button" aria-expanded="true">
+          <span>Movement tracker</span>
+          <span class="toggle-indicator">−</span>
+        </button>
+        <div class="section-content">
+          <div id="activities-list" class="activities-list"></div>
+        </div>
+      </section>
+
       <main class="layout">
-        <section class="panel form-panel">
-          <h2>Add a movement</h2>
-          <form id="activity-form">
-            <label>
-              Exercise
-              <input id="exercise-name" type="text" placeholder="pushups" required />
-            </label>
-
-            <div class="two-col">
+        <section class="panel collapsible-section" id="planner-panel">
+          <button class="section-toggle" type="button" aria-expanded="true">
+            <span>Add a movement</span>
+            <span class="toggle-indicator">−</span>
+          </button>
+          <div class="section-content">
+            <form id="activity-form">
               <label>
-                Current sets
-                <input id="current-sets" type="number" min="1" step="1" value="2" required />
+                Exercise
+                <input id="exercise-name" type="text" placeholder="pushups" required />
               </label>
-              <label>
-                Current reps
-                <input id="current-reps" type="number" min="1" step="1" value="10" required />
-              </label>
-            </div>
 
-            <div class="two-col">
-              <label>
-                Target date
-                <input id="target-date" type="date" required />
-              </label>
-              <label>
-                Target sets
-                <input id="target-sets" type="number" min="1" step="1" value="5" required />
-              </label>
-            </div>
+              <div class="two-col">
+                <label>
+                  Current sets
+                  <input id="current-sets" type="number" min="1" step="1" value="2" required />
+                </label>
+                <label>
+                  Current reps
+                  <input id="current-reps" type="number" min="1" step="1" value="10" required />
+                </label>
+              </div>
 
-            <label>
-              Target reps
-              <input id="target-reps" type="number" min="1" step="1" value="30" required />
-            </label>
+              <div class="two-col">
+                <label>
+                  Target date
+                  <input id="target-date" type="date" required />
+                </label>
+                <label>
+                  Target sets
+                  <input id="target-sets" type="number" min="1" step="1" value="5" required />
+                </label>
+              </div>
 
-            <button type="submit" class="primary-btn">Add plan</button>
-          </form>
+              <label>
+                Target reps
+                <input id="target-reps" type="number" min="1" step="1" value="30" required />
+              </label>
+
+              <button type="submit" class="primary-btn">Add plan</button>
+            </form>
+          </div>
         </section>
 
-        <section class="panel plan-panel">
-          <div class="plan-header">
-            <div>
-              <p class="eyebrow">Selected day</p>
-              <h2 id="selected-date-label">Today</h2>
-            </div>
+        <section class="panel collapsible-section" id="plan-panel">
+          <button class="section-toggle" type="button" aria-expanded="true">
+            <span id="selected-date-label">Today</span>
+            <span class="toggle-indicator">−</span>
+          </button>
+          <div class="section-content">
+            <div id="today-plan" class="plan-list"></div>
           </div>
-          <div id="today-plan" class="plan-list"></div>
         </section>
       </main>
 
-      <section class="panel calendar-panel">
-        <div class="calendar-toolbar">
-          <button id="prev-month" class="ghost-btn" type="button">◀</button>
-          <h2 id="month-label">Month</h2>
-          <button id="next-month" class="ghost-btn" type="button">▶</button>
-        </div>
+      <section class="panel collapsible-section" id="calendar-panel">
+        <button class="section-toggle" type="button" aria-expanded="true">
+          <span>Calendar</span>
+          <span class="toggle-indicator">−</span>
+        </button>
+        <div class="section-content">
+          <div class="calendar-toolbar">
+            <button id="prev-month" class="ghost-btn" type="button">◀</button>
+            <h2 id="month-label">Month</h2>
+            <button id="next-month" class="ghost-btn" type="button">▶</button>
+          </div>
 
-        <div class="weekday-row">
-          <span>Sun</span>
-          <span>Mon</span>
-          <span>Tue</span>
-          <span>Wed</span>
-          <span>Thu</span>
-          <span>Fri</span>
-          <span>Sat</span>
+          <div class="weekday-row">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
+          <div id="calendar-grid" class="calendar-grid"></div>
         </div>
-        <div id="calendar-grid" class="calendar-grid"></div>
-      </section>
-
-      <section class="panel list-panel">
-        <div class="list-header">
-          <h2>Movement tracker</h2>
-        </div>
-        <div id="activities-list" class="activities-list"></div>
       </section>
     </div>
 
