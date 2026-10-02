@@ -1,411 +1,412 @@
-:root {
-  --bg: #f4f7fb;
-  --panel: #ffffff;
-  --panel-alt: #eef5ff;
-  --primary: #1d75d9;
-  --primary-dark: #0d5fbd;
-  --accent: #22b07d;
-  --text: #1f2937;
-  --muted: #667085;
-  --border: #dfe7f1;
-  --warning: #f7c95c;
-  --danger: #de5a5a;
-  --shadow: 0 10px 24px rgba(30, 64, 175, 0.08);
+const STORAGE_KEY = 'workout-planner-v1';
+
+const form = document.getElementById('activity-form');
+const exerciseNameInput = document.getElementById('exercise-name');
+const currentSetsInput = document.getElementById('current-sets');
+const currentRepsInput = document.getElementById('current-reps');
+const targetDateInput = document.getElementById('target-date');
+const targetSetsInput = document.getElementById('target-sets');
+const targetRepsInput = document.getElementById('target-reps');
+const activitiesList = document.getElementById('activities-list');
+const calendarGrid = document.getElementById('calendar-grid');
+const monthLabel = document.getElementById('month-label');
+const selectedDateLabel = document.getElementById('selected-date-label');
+const todayPlan = document.getElementById('today-plan');
+const prevMonthButton = document.getElementById('prev-month');
+const nextMonthButton = document.getElementById('next-month');
+
+const today = new Date();
+const defaultTargetDate = addDays(today, 45);
+const appState = {
+  selectedDate: formatDateKey(today),
+  monthDate: new Date(today.getFullYear(), today.getMonth(), 1),
+  activities: loadActivities(),
+};
+
+function saveActivities() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState.activities));
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  min-height: 100%;
-  font-family: Inter, "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #edf5ff 0%, var(--bg) 180px);
-  color: var(--text);
-}
-
-body {
-  padding: 32px 18px 48px;
-}
-
-button, input {
-  font: inherit;
-}
-
-.app-shell {
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-.topbar {
-  margin-bottom: 20px;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.72rem;
-  color: var(--primary);
-  font-weight: 700;
-}
-
-h1, h2, h3, p {
-  margin-top: 0;
-}
-
-h1 {
-  margin-bottom: 0;
-  font-size: clamp(2rem, 3vw, 2.8rem);
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 420px) minmax(260px, 1fr);
-  gap: 20px;
-  margin: 20px 0;
-}
-
-.collapsible-section {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.collapsible-section.collapsed .section-content {
-  display: none;
-}
-
-.section-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 0;
-  background: transparent;
-  padding: 18px 20px;
-  color: var(--text);
-  font-weight: 800;
-  font-size: 1.05rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.toggle-indicator {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: #eef4ff;
-  color: var(--primary-dark);
-  font-size: 1.2rem;
-}
-
-.collapsible-section.collapsed .toggle-indicator {
-  content: '+';
-}
-
-.section-content {
-  padding: 0 20px 20px;
-}
-
-.form-panel label, .plan-panel label {
-  display: block;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 12px;
-}
-
-input {
-  width: 100%;
-  margin-top: 6px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #f9fbff;
-  color: var(--text);
-}
-
-input:focus {
-  outline: 2px solid rgba(29, 117, 217, 0.15);
-  border-color: var(--primary);
-}
-
-.two-col {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.primary-btn, .secondary-btn, .ghost-btn, .tiny-btn {
-  border: 0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-}
-
-.primary-btn:hover, .secondary-btn:hover, .ghost-btn:hover, .tiny-btn:hover {
-  transform: translateY(-1px);
-}
-
-.primary-btn {
-  width: 100%;
-  margin-top: 10px;
-  background: var(--primary);
-  color: white;
-  padding: 12px 16px;
-  font-weight: 700;
-}
-
-.primary-btn:hover {
-  background: var(--primary-dark);
-}
-
-.plan-list, .activities-list {
-  display: grid;
-  gap: 12px;
-}
-
-.plan-item {
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.plan-item strong {
-  display: block;
-  font-size: 1rem;
-}
-
-.plan-item small {
-  color: var(--muted);
-}
-
-.secondary-btn, .tiny-btn {
-  background: var(--accent);
-  color: #fff;
-  padding: 8px 12px;
-  font-weight: 700;
-}
-
-.tiny-btn {
-  padding: 7px 10px;
-  font-size: 0.8rem;
-  min-width: 95px;
-}
-
-.secondary-btn.is-done,
-.tiny-btn.is-done {
-  background: #d9f3ea;
-  color: #146c4f;
-}
-
-.calendar-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.weekday-row,
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.weekday-row {
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.weekday-row span {
-  padding: 0 4px;
-}
-
-.calendar-grid {
-  min-height: 420px;
-}
-
-.day-cell {
-  background: #f9fbff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  min-height: 120px;
-  padding: 8px 8px 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  text-align: left;
-}
-
-.day-cell.is-other-month {
-  opacity: 0.42;
-}
-
-.day-cell.is-selected {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(29, 117, 217, 0.12);
-}
-
-.day-cell.is-today {
-  background: #edf5ff;
-}
-
-.day-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 700;
-  font-size: 0.88rem;
-}
-
-.day-events {
-  display: grid;
-  gap: 4px;
-  font-size: 0.72rem;
-  line-height: 1.2;
-}
-
-.event-pill {
-  background: #dfeaff;
-  color: #1a3d77;
-  border-radius: 999px;
-  padding: 4px 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.event-pill.done {
-  background: #dff7ed;
-  color: #146c4f;
-}
-
-.event-pill.goal {
-  background: #fff1ca;
-  color: #7a5d16;
-}
-
-.day-meta {
-  margin-top: auto;
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-
-.activity-card {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-}
-
-.activity-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.activity-name {
-  font-size: 1.1rem;
-  font-weight: 800;
-}
-
-.streak-badge {
-  background: #fff4d8;
-  color: #835408;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.activity-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.metric-chip {
-  display: inline-flex;
-  align-items: center;
-  background: #edf5ff;
-  color: var(--primary-dark);
-  border-radius: 999px;
-  padding: 6px 8px;
-  font-weight: 700;
-  font-size: 0.8rem;
-}
-
-.activity-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.activity-target {
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.empty-state {
-  margin-top: 10px;
-  color: var(--muted);
-  text-align: center;
-  padding: 20px 12px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  background: #fbfcfe;
-}
-
-.ghost-btn {
-  background: #eef4ff;
-  color: var(--primary-dark);
-  padding: 8px 12px;
-  font-weight: 700;
-}
-
-@media (max-width: 840px) {
-  .layout {
-    grid-template-columns: 1fr;
+function loadActivities() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    return [];
   }
 
-  .calendar-grid {
-    min-height: 280px;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Unable to load saved workout data.', error);
+    return [];
   }
 }
 
-@media (max-width: 540px) {
-  body {
-    padding: 20px 12px 40px;
-  }
-
-  .two-col {
-    grid-template-columns: 1fr;
-  }
-
-  .activity-card-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+function formatDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
+
+function parseDateKey(dateKey) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, amount) {
+  const clone = new Date(date);
+  clone.setDate(clone.getDate() + amount);
+  return clone;
+}
+
+function diffInDays(startDate, endDate) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round((endDate - startDate) / msPerDay);
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function linearInterpolate(start, end, progress) {
+  return start + (end - start) * progress;
+}
+
+function getSetProgressionEvents(activity) {
+  const startDate = new Date();
+  const targetDate = parseDateKey(activity.targetDate);
+  const totalDays = Math.max(1, diffInDays(startDate, targetDate));
+  const setDelta = activity.targetSets - activity.currentSets;
+  const stepCount = Math.max(1, Math.abs(setDelta));
+  const direction = Math.sign(setDelta) || 1;
+  const events = [];
+
+  for (let step = 1; step <= stepCount; step += 1) {
+    const progressRatio = step / (stepCount + 1);
+    const eventDate = addDays(startDate, Math.round(totalDays * progressRatio));
+    events.push({
+      date: eventDate,
+      direction,
+      type: direction >= 0 ? 'increase' : 'decrease',
+    });
+  }
+
+  return events;
+}
+
+function getTemporaryRepModifier(activity, dateKey) {
+  const currentDate = parseDateKey(dateKey);
+  const startDate = new Date();
+  const targetDate = parseDateKey(activity.targetDate);
+  const events = getSetProgressionEvents(activity);
+  const dateList = events
+    .filter((event) => event.date <= currentDate)
+    .sort((a, b) => a.date - b.date);
+
+  if (!dateList.length) {
+    return 0;
+  }
+
+  const latestEvent = dateList[dateList.length - 1];
+  const nextEvent = events.find((event) => event.date > latestEvent.date) || { date: targetDate };
+  const windowDays = Math.max(1, diffInDays(latestEvent.date, nextEvent.date));
+  const elapsed = Math.max(0, diffInDays(latestEvent.date, currentDate));
+  const decay = clamp(elapsed / windowDays, 0, 1);
+  const effect = 0.15 * (1 - decay);
+
+  return latestEvent.direction >= 0 ? -effect : effect;
+}
+
+function getPlanForDate(activity, dateKey) {
+  const startDate = new Date();
+  const targetDate = parseDateKey(activity.targetDate);
+  const currentDate = parseDateKey(dateKey);
+
+  const totalDays = Math.max(1, diffInDays(startDate, targetDate));
+  const elapsedDays = diffInDays(startDate, currentDate);
+  const normalized = clamp(elapsedDays / totalDays, 0, 1);
+
+  const baseSets = linearInterpolate(activity.currentSets, activity.targetSets, normalized);
+  const baseReps = linearInterpolate(activity.currentReps, activity.targetReps, normalized);
+  const repModifier = getTemporaryRepModifier(activity, dateKey);
+  const adjustedReps = baseReps * (1 + repModifier);
+
+  return {
+    sets: Math.max(1, Math.round(baseSets)),
+    reps: Math.max(1, Math.round(adjustedReps)),
+    progress: normalized,
+    baseReps,
+    repModifier,
+  };
+}
+
+function getCurrentStreak(activity) {
+  const uniqueDates = [...new Set((activity.completedDates || []).map((d) => d))].sort();
+  if (!uniqueDates.length) {
+    return 0;
+  }
+
+  let streak = 0;
+  let current = new Date();
+
+  while (uniqueDates.includes(formatDateKey(current))) {
+    streak += 1;
+    current = addDays(current, -1);
+  }
+
+  return streak;
+}
+
+function createActivity(data) {
+  return {
+    id: `activity-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    name: data.name.trim(),
+    currentSets: Number(data.currentSets),
+    currentReps: Number(data.currentReps),
+    targetDate: data.targetDate,
+    targetSets: Number(data.targetSets),
+    targetReps: Number(data.targetReps),
+    completedDates: [],
+  };
+}
+
+function setTargetDateDefault() {
+  targetDateInput.min = formatDateKey(addDays(new Date(), 1));
+  targetDateInput.value = formatDateKey(defaultTargetDate);
+}
+
+function renderPlanForSelectedDate() {
+  const selectedDateText = new Date(`${appState.selectedDate}T12:00:00`);
+  selectedDateLabel.textContent = selectedDateText.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const entries = appState.activities.map((activity) => {
+    const plan = getPlanForDate(activity, appState.selectedDate);
+    const isDone = (activity.completedDates || []).includes(appState.selectedDate);
+    return {
+      ...activity,
+      plan,
+      isDone,
+    };
+  });
+
+  if (!entries.length) {
+    todayPlan.innerHTML = '<div class="empty-state">No workouts yet. Add your first exercise to start planning.</div>';
+    return;
+  }
+
+  todayPlan.innerHTML = entries
+    .map((activity) => {
+      const doneButtonLabel = activity.isDone ? 'Completed ✅' : 'Confirm workout';
+      const doneClass = activity.isDone ? 'is-done' : '';
+
+      return `
+        <div class="plan-item">
+          <div>
+            <strong>${escapeHtml(activity.name)}</strong>
+            <small>${activity.plan.sets} sets × ${activity.plan.reps} reps</small>
+          </div>
+          <button class="tiny-btn ${doneClass}" type="button" data-action="toggle-complete" data-id="${activity.id}">${doneButtonLabel}</button>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderActivities() {
+  if (!appState.activities.length) {
+    activitiesList.innerHTML = '<div class="empty-state">Your exercises will show up here as you add them.</div>';
+    return;
+  }
+
+  activitiesList.innerHTML = appState.activities
+    .map((activity) => {
+      const streak = getCurrentStreak(activity);
+      const targetSummary = `${activity.targetSets} sets × ${activity.targetReps} reps by ${formatDisplayDate(activity.targetDate)}`;
+      const doneCount = (activity.completedDates || []).length;
+      const selectedDateDone = (activity.completedDates || []).includes(appState.selectedDate);
+
+      return `
+        <div class="activity-card">
+          <div class="activity-card-header">
+            <div class="activity-name">${escapeHtml(activity.name)}</div>
+            <div class="streak-badge">🔥 ${streak}-day streak</div>
+          </div>
+          <div class="activity-metrics">
+            <span class="metric-chip">Now: ${activity.currentSets} × ${activity.currentReps}</span>
+            <span class="metric-chip">Goal: ${activity.targetSets} × ${activity.targetReps}</span>
+          </div>
+          <div class="activity-card-footer">
+            <div class="activity-target">${targetSummary}</div>
+            <button class="secondary-btn ${selectedDateDone ? 'is-done' : ''}" type="button" data-action="toggle-complete" data-id="${activity.id}">
+              ${selectedDateDone ? 'Done ✅' : 'Check off today'}
+            </button>
+          </div>
+          <div class="activity-target">Workouts logged: ${doneCount}</div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderCalendar() {
+  const firstDayOfMonth = new Date(appState.monthDate.getFullYear(), appState.monthDate.getMonth(), 1);
+  const calendarStart = new Date(firstDayOfMonth);
+  calendarStart.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay());
+
+  monthLabel.textContent = firstDayOfMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  const daysToRender = [];
+  for (let i = 0; i < 42; i += 1) {
+    daysToRender.push(addDays(calendarStart, i));
+  }
+
+  calendarGrid.innerHTML = daysToRender
+    .map((date) => {
+      const dateKey = formatDateKey(date);
+      const isCurrentMonth = date.getMonth() === appState.monthDate.getMonth();
+      const isSelected = dateKey === appState.selectedDate;
+      const isToday = dateKey === formatDateKey(today);
+
+      const dayActivities = appState.activities
+        .map((activity) => {
+          const plan = getPlanForDate(activity, dateKey);
+          const done = (activity.completedDates || []).includes(dateKey);
+          const title = `${activity.name}: ${plan.sets}×${plan.reps}`;
+          const className = done ? 'done' : plan.progress > 0.5 ? 'goal' : '';
+          return { name: title, done, className };
+        })
+        .filter((entry) => entry.name);
+
+      const summary = dayActivities
+        .slice(0, 2)
+        .map((entry) => `<div class="event-pill ${entry.className}">${escapeHtml(entry.name)}</div>`)
+        .join('');
+      const extra = dayActivities.length > 2 ? `<div class="day-meta">+${dayActivities.length - 2} more</div>` : '';
+
+      return `
+        <button class="day-cell ${isCurrentMonth ? '' : 'is-other-month'} ${isSelected ? 'is-selected' : ''} ${isToday ? 'is-today' : ''}" type="button" data-date="${dateKey}">
+          <div class="day-header">
+            <span>${date.getDate()}</span>
+            ${dayActivities.some((item) => item.done) ? '✅' : ''}
+          </div>
+          <div class="day-events">${summary || '<span class="day-meta">No plan</span>'}</div>
+          ${extra}
+        </button>
+      `;
+    })
+    .join('');
+
+  document.querySelectorAll('.day-cell').forEach((button) => {
+    button.addEventListener('click', () => {
+      appState.selectedDate = button.dataset.date;
+      renderAll();
+    });
+  });
+}
+
+function formatDisplayDate(dateKey) {
+  const date = parseDateKey(dateKey);
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function toggleCompleteForActivity(activityId) {
+  const activity = appState.activities.find((item) => item.id === activityId);
+  if (!activity) {
+    return;
+  }
+
+  const dateKey = appState.selectedDate;
+  const existingEntries = activity.completedDates || [];
+
+  if (existingEntries.includes(dateKey)) {
+    activity.completedDates = existingEntries.filter((date) => date !== dateKey);
+  } else {
+    activity.completedDates = [...existingEntries, dateKey].sort();
+  }
+
+  saveActivities();
+  renderAll();
+}
+
+function renderAll() {
+  renderPlanForSelectedDate();
+  renderActivities();
+  renderCalendar();
+}
+
+function setupCollapsibleSections() {
+  document.querySelectorAll('.section-toggle').forEach((button) => {
+    button.addEventListener('click', () => {
+      const section = button.closest('.collapsible-section');
+      const isCollapsed = section.classList.toggle('collapsed');
+      button.setAttribute('aria-expanded', String(!isCollapsed));
+      button.querySelector('.toggle-indicator').textContent = isCollapsed ? '+' : '−';
+    });
+  });
+}
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  const payload = {
+    name: exerciseNameInput.value,
+    currentSets: currentSetsInput.value,
+    currentReps: currentRepsInput.value,
+    targetDate: targetDateInput.value,
+    targetSets: targetSetsInput.value,
+    targetReps: targetRepsInput.value,
+  };
+
+  if (!payload.name || !payload.targetDate) {
+    return;
+  }
+
+  appState.activities.push(createActivity(payload));
+  saveActivities();
+  form.reset();
+  setTargetDateDefault();
+  renderAll();
+});
+
+document.addEventListener('click', (event) => {
+  const element = event.target.closest('[data-action="toggle-complete"]');
+  if (!element) {
+    return;
+  }
+
+  toggleCompleteForActivity(element.dataset.id);
+});
+
+prevMonthButton.addEventListener('click', () => {
+  appState.monthDate = new Date(appState.monthDate.getFullYear(), appState.monthDate.getMonth() - 1, 1);
+  renderCalendar();
+});
+
+nextMonthButton.addEventListener('click', () => {
+  appState.monthDate = new Date(appState.monthDate.getFullYear(), appState.monthDate.getMonth() + 1, 1);
+  renderCalendar();
+});
+
+setTargetDateDefault();
+setupCollapsibleSections();
+renderAll();
+
+window.addEventListener('storage', () => {
+  appState.activities = loadActivities();
+  renderAll();
+});
