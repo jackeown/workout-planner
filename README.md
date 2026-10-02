@@ -13,7 +13,7 @@ A simple static GitHub Pages app for planning workout progression over time.
 - Reps shift automatically (up to 20%, tapering to 0%) whenever your set count changes, to offset the added or removed difficulty
 - Light/dark mode toggle that follows your OS preference by default and remembers your choice
 - All data persists in browser localStorage with no backend required
-- Movement tracker appears first and all sections are collapsible
+- Exercise tracker appears first and all sections are collapsible
 
 ## Run locally
 

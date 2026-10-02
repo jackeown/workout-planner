@@ -3,6 +3,7 @@ const COLLAPSE_STATE_KEY = 'workout-planner-collapse-state';
 const THEME_KEY = 'workout-planner-theme';
 const TEMPORARY_REP_ADJUSTMENT = 0.2;
 const DARK_MODE_QUERY = '(prefers-color-scheme: dark)';
+const EVENT_COLOR_COUNT = 8;
 
 const form = document.getElementById('activity-form');
 const exerciseNameInput = document.getElementById('exercise-name');
@@ -21,6 +22,7 @@ const nextMonthButton = document.getElementById('next-month');
 const themeToggleButton = document.getElementById('theme-toggle');
 
 const today = new Date();
+const todayKey = formatDateKey(today);
 const defaultTargetDate = addDays(today, 45);
 const appState = {
   selectedDate: formatDateKey(today),
@@ -370,6 +372,8 @@ function renderPlanForSelectedDate() {
     };
   });
 
+  const isFuture = appState.selectedDate > todayKey;
+
   if (!entries.length) {
     todayPlan.innerHTML = '<div class="empty-state">No workouts yet. Add your first exercise to start planning.</div>';
     return;
@@ -377,7 +381,7 @@ function renderPlanForSelectedDate() {
 
   todayPlan.innerHTML = entries
     .map((activity) => {
-      const doneButtonLabel = activity.isDone ? 'Completed ✅' : 'Confirm workout';
+      const doneButtonLabel = activity.isDone ? 'Completed ✅' : isFuture ? 'Not yet' : 'Confirm workout';
       const doneClass = activity.isDone ? 'is-done' : '';
 
       return `
@@ -387,7 +391,7 @@ function renderPlanForSelectedDate() {
             <small>${activity.plan.sets} sets × ${activity.plan.reps} reps</small>
             ${renderRepAdjustment(activity.plan)}
           </div>
-          <button class="tiny-btn ${doneClass}" type="button" data-action="toggle-complete" data-id="${activity.id}">${doneButtonLabel}</button>
+          <button class="tiny-btn ${doneClass}" type="button" data-action="toggle-complete" data-id="${activity.id}" data-date="${appState.selectedDate}"${isFuture ? ' disabled' : ''}>${doneButtonLabel}</button>
         </div>
       `;
     })
@@ -405,7 +409,7 @@ function renderActivities() {
       const streak = getCurrentStreak(activity);
       const targetSummary = `${activity.targetSets} sets × ${activity.targetReps} reps by ${formatDisplayDate(activity.targetDate)}`;
       const doneCount = (activity.completedDates || []).length;
-      const selectedDateDone = (activity.completedDates || []).includes(appState.selectedDate);
+      const todayDone = (activity.completedDates || []).includes(todayKey);
 
       return `
         <div class="activity-card">
@@ -419,8 +423,8 @@ function renderActivities() {
           </div>
           <div class="activity-card-footer">
             <div class="activity-target">${targetSummary}</div>
-            <button class="secondary-btn ${selectedDateDone ? 'is-done' : ''}" type="button" data-action="toggle-complete" data-id="${activity.id}">
-              ${selectedDateDone ? 'Done ✅' : 'Check off today'}
+            <button class="secondary-btn ${todayDone ? 'is-done' : ''}" type="button" data-action="toggle-complete" data-id="${activity.id}" data-date="${todayKey}">
+              ${todayDone ? 'Done ✅' : 'Check off today'}
             </button>
           </div>
           <div class="activity-target">Workouts logged: ${doneCount}</div>
@@ -432,6 +436,11 @@ function renderActivities() {
       `;
     })
     .join('');
+}
+
+function getActivityColorIndex(activity) {
+  const index = appState.activities.indexOf(activity);
+  return (index < 0 ? 0 : index) % EVENT_COLOR_COUNT;
 }
 
 function renderCalendar() {
@@ -458,14 +467,14 @@ function renderCalendar() {
           const plan = getPlanForDate(activity, dateKey);
           const done = (activity.completedDates || []).includes(dateKey);
           const title = `${activity.name}: ${plan.sets}×${plan.reps}`;
-          const className = done ? 'done' : plan.progress > 0.5 ? 'goal' : '';
-          return { name: title, done, className };
+          const colorClass = `event-color-${getActivityColorIndex(activity)}`;
+          return { name: title, done, colorClass };
         })
         .filter((entry) => entry.name);
 
       const summary = dayActivities
         .slice(0, 2)
-        .map((entry) => `<div class="event-pill ${entry.className}">${escapeHtml(entry.name)}</div>`)
+        .map((entry) => `<div class="event-pill ${entry.colorClass}${entry.done ? ' is-done' : ''}">${escapeHtml(entry.name)}</div>`)
         .join('');
       const extra = dayActivities.length > 2 ? `<div class="day-meta">+${dayActivities.length - 2} more</div>` : '';
 
@@ -504,16 +513,177 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function toggleCompleteForActivity(activityId) {
+const FIREWORK_COLORS = ['#58a6ff', '#22b07d', '#f7c95c', '#f07171', '#c3a6ff', '#6fd9d0', '#f5a3c0'];
+let congratsTimeout = null;
+
+function showCongratsToast(streak) {
+  let toast = document.getElementById('congrats-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'congrats-toast';
+    toast.className = 'congrats-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = `Good Job! Congrats on extending your ${streak} day streak!`;
+
+  toast.classList.remove('is-visible');
+  void toast.offsetWidth;
+  toast.classList.add('is-visible');
+
+  clearTimeout(congratsTimeout);
+  congratsTimeout = setTimeout(() => toast.classList.remove('is-visible'), 4500);
+}
+
+function launchFireworks() {
+  if (document.querySelector('.fireworks-canvas')) {
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'fireworks-canvas';
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let width = 0;
+  let height = 0;
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  const rockets = [];
+  const sparks = [];
+
+  function explode(rocket) {
+    const count = 44 + Math.floor(Math.random() * 26);
+    for (let i = 0; i < count; i += 1) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.2;
+      const speed = 1.5 + Math.random() * 3.6;
+      sparks.push({
+        x: rocket.x,
+        y: rocket.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        decay: 0.011 + Math.random() * 0.013,
+        color: Math.random() < 0.7 ? rocket.color : FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)],
+      });
+    }
+  }
+
+  for (let i = 0; i < 5; i += 1) {
+    rockets.push({
+      x: width * (0.2 + Math.random() * 0.6),
+      y: height + 8,
+      vx: (Math.random() - 0.5) * 1.1,
+      vy: -(7 + Math.random() * 3),
+      targetY: height * (0.12 + Math.random() * 0.3),
+      color: FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)],
+      delay: i * 170,
+    });
+  }
+
+  const start = performance.now();
+  let last = start;
+
+  function frame(now) {
+    const delta = Math.min(now - last, 32) / 16.67;
+    last = now;
+    const elapsed = now - start;
+
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = rockets.length - 1; i >= 0; i -= 1) {
+      const rocket = rockets[i];
+      if (elapsed < rocket.delay) {
+        continue;
+      }
+
+      rocket.x += rocket.vx * delta;
+      rocket.y += rocket.vy * delta;
+      rocket.vy += 0.055 * delta;
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = rocket.color;
+      ctx.beginPath();
+      ctx.arc(rocket.x, rocket.y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (rocket.vy >= 0 || rocket.y <= rocket.targetY) {
+        explode(rocket);
+        rockets.splice(i, 1);
+      }
+    }
+
+    for (let i = sparks.length - 1; i >= 0; i -= 1) {
+      const spark = sparks[i];
+      spark.x += spark.vx * delta;
+      spark.y += spark.vy * delta;
+      spark.vy += 0.045 * delta;
+      spark.vx *= 0.985;
+      spark.vy *= 0.985;
+      spark.life -= spark.decay * delta;
+
+      if (spark.life <= 0) {
+        sparks.splice(i, 1);
+        continue;
+      }
+
+      ctx.globalAlpha = Math.max(0, spark.life);
+      ctx.fillStyle = spark.color;
+      ctx.beginPath();
+      ctx.arc(spark.x, spark.y, 2.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+
+    if (rockets.length || sparks.length) {
+      requestAnimationFrame(frame);
+    } else {
+      window.removeEventListener('resize', resize);
+      canvas.remove();
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function showCelebration(streak) {
+  showCongratsToast(streak);
+
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    launchFireworks();
+  }
+}
+
+function toggleCompleteForActivity(activityId, dateKey = appState.selectedDate) {
   const activity = appState.activities.find((item) => item.id === activityId);
   if (!activity) {
     return;
   }
 
-  const dateKey = appState.selectedDate;
   const existingEntries = activity.completedDates || [];
+  const wasDone = existingEntries.includes(dateKey);
 
-  if (existingEntries.includes(dateKey)) {
+  if (!wasDone && dateKey > todayKey) {
+    return;
+  }
+
+  if (wasDone) {
     activity.completedDates = existingEntries.filter((date) => date !== dateKey);
   } else {
     activity.completedDates = [...existingEntries, dateKey].sort();
@@ -521,6 +691,10 @@ function toggleCompleteForActivity(activityId) {
 
   saveActivities();
   renderAll();
+
+  if (!wasDone && dateKey === todayKey) {
+    showCelebration(getCurrentStreak(activity));
+  }
 }
 
 function deleteActivity(activityId) {
@@ -655,7 +829,7 @@ document.addEventListener('click', (event) => {
   const id = element.dataset.id;
 
   if (action === 'toggle-complete') {
-    toggleCompleteForActivity(id);
+    toggleCompleteForActivity(id, element.dataset.date);
   } else if (action === 'delete') {
     deleteActivity(id);
   } else if (action === 'edit') {
