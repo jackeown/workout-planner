@@ -35,10 +35,13 @@ Then visit `http://localhost:8000`.
 
 ## Rep adjustments
 
-When a plan's set count increases, the suggested reps drop by up to 20% so total
-volume stays manageable; when the set count decreases, reps rise by up to 20% to
-keep the effort comparable. The adjustment tapers linearly and reaches 0% by the
-next set count change, or by the goal date — whichever comes first.
+When a plan's set count changes, the suggested reps adjust to offset the change in
+difficulty. Increasing from 3 to 4 sets drops the suggested reps 20% below what you
+were doing on 3 sets (30 -> 24), then they climb back toward your goal reps over the
+rest of that stage. Decreasing the set count raises reps 20% to keep the effort
+comparable. The adjustment starts on the exact day the set count changes and is fully
+unwound by the next set count change, or by the goal date — whichever comes first. On
+the goal date you always get exactly your target sets x target reps.
 
 ## Local storage
 

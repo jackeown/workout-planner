@@ -159,6 +159,14 @@ function diffInDays(startDate, endDate) {
   return Math.round((endDate - startDate) / msPerDay);
 }
 
+function getStartOfDay(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getTotalDays(activity) {
+  return Math.max(1, diffInDays(getStartOfDay(), parseDateKey(activity.targetDate)));
+}
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -193,74 +201,104 @@ function getLastKnownStats(activity) {
   };
 }
 
-function getSetProgressionEvents(activity) {
-  const startDate = new Date();
-  const targetDate = parseDateKey(activity.targetDate);
-  const totalDays = Math.max(1, diffInDays(startDate, targetDate));
-  const setDelta = activity.targetSets - activity.currentSets;
-  const stepCount = Math.abs(setDelta);
-  const events = [];
-
-  if (stepCount === 0) {
-    return events;
-  }
-
-  const direction = Math.sign(setDelta);
-
-  for (let step = 1; step <= stepCount; step += 1) {
-    const progressRatio = step / (stepCount + 1);
-    const dayOffset = Math.round(totalDays * progressRatio);
-    const eventDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + dayOffset);
-    events.push({
-      date: eventDate,
-      direction,
-      type: direction >= 0 ? 'increase' : 'decrease',
-    });
-  }
-
-  return events;
+function getBaselineReps(activity, day, totalDays) {
+  const progress = clamp(day / totalDays, 0, 1);
+  return linearInterpolate(activity.currentReps, activity.targetReps, progress);
 }
 
-function getTemporaryRepModifier(activity, dateKey) {
-  const currentDate = parseDateKey(dateKey);
-  const targetDate = parseDateKey(activity.targetDate);
-  const events = getSetProgressionEvents(activity);
-  const pastEvents = events
-    .filter((event) => event.date <= currentDate)
-    .sort((a, b) => a.date - b.date);
+function getSetCountForDay(activity, day, totalDays) {
+  const progress = clamp(day / totalDays, 0, 1);
+  return Math.max(1, Math.round(linearInterpolate(activity.currentSets, activity.targetSets, progress)));
+}
 
-  if (!pastEvents.length) {
-    return 0;
+function getSetStages(activity) {
+  const totalDays = getTotalDays(activity);
+  const stages = [];
+  let previousSets = null;
+
+  for (let day = 0; day <= totalDays; day += 1) {
+    const sets = getSetCountForDay(activity, day, totalDays);
+    if (sets === previousSets) {
+      continue;
+    }
+
+    if (stages.length) {
+      stages[stages.length - 1].endDay = day - 1;
+    }
+
+    const referenceSets = stages.length ? stages[stages.length - 1].sets : activity.currentSets;
+    stages.push({
+      startDay: day,
+      endDay: totalDays,
+      sets,
+      direction: Math.sign(sets - referenceSets),
+    });
+    previousSets = sets;
   }
 
-  const latestEvent = pastEvents[pastEvents.length - 1];
-  const nextEvent = events.find((event) => event.date > latestEvent.date) || { date: targetDate };
-  const windowDays = Math.max(1, diffInDays(latestEvent.date, nextEvent.date));
-  const elapsedDays = Math.max(0, diffInDays(latestEvent.date, currentDate));
-  const remainingRatio = clamp(1 - elapsedDays / windowDays, 0, 1);
-  const effect = TEMPORARY_REP_ADJUSTMENT * remainingRatio;
+  return stages;
+}
 
-  return latestEvent.direction >= 0 ? -effect : effect;
+const stageCache = {};
+
+function getCachedSetStages(activity) {
+  const signature = [
+    activity.currentSets,
+    activity.currentReps,
+    activity.targetSets,
+    activity.targetReps,
+    activity.targetDate,
+    formatDateKey(getStartOfDay()),
+  ].join('|');
+
+  const cached = stageCache[activity.id];
+  if (cached && cached.signature === signature) {
+    return cached.stages;
+  }
+
+  const stages = getSetStages(activity);
+  stageCache[activity.id] = { signature, stages };
+  return stages;
+}
+
+function getRepsForDay(activity, day, totalDays, stages) {
+  const clampedDay = clamp(day, 0, totalDays);
+  const stageIndex = stages.findIndex((stage) => clampedDay >= stage.startDay && clampedDay <= stage.endDay);
+  const stage = stages[stageIndex] || stages[stages.length - 1];
+  const endReps = getBaselineReps(activity, stage.endDay, totalDays);
+
+  let startReps = activity.currentReps;
+  if (stageIndex > 0) {
+    const factor =
+      stage.direction > 0
+        ? 1 - TEMPORARY_REP_ADJUSTMENT
+        : stage.direction < 0
+          ? 1 + TEMPORARY_REP_ADJUSTMENT
+          : 1;
+    startReps = getBaselineReps(activity, stage.startDay, totalDays) * factor;
+  }
+
+  const span = Math.max(1, stage.endDay - stage.startDay);
+  const stageProgress = clamp((clampedDay - stage.startDay) / span, 0, 1);
+
+  return linearInterpolate(startReps, endReps, stageProgress);
 }
 
 function getPlanForDate(activity, dateKey) {
-  const startDate = new Date();
-  const targetDate = parseDateKey(activity.targetDate);
-  const currentDate = parseDateKey(dateKey);
+  const totalDays = getTotalDays(activity);
+  const elapsedDays = diffInDays(getStartOfDay(), parseDateKey(dateKey));
+  const day = clamp(elapsedDays, 0, totalDays);
+  const stages = getCachedSetStages(activity);
+  const stage = stages.find((item) => day >= item.startDay && day <= item.endDay) || stages[stages.length - 1];
 
-  const totalDays = Math.max(1, diffInDays(startDate, targetDate));
-  const elapsedDays = diffInDays(startDate, currentDate);
-  const normalized = clamp(elapsedDays / totalDays, 0, 1);
-
-  const baseSets = linearInterpolate(activity.currentSets, activity.targetSets, normalized);
-  const baseReps = linearInterpolate(activity.currentReps, activity.targetReps, normalized);
-  const repModifier = getTemporaryRepModifier(activity, dateKey);
-  const adjustedReps = baseReps * (1 + repModifier);
+  const baseReps = getBaselineReps(activity, day, totalDays);
+  const adjustedReps = getRepsForDay(activity, day, totalDays, stages);
+  const repModifier = baseReps > 0 ? adjustedReps / baseReps - 1 : 0;
 
   return {
-    sets: Math.max(1, Math.round(baseSets)),
+    sets: stage.sets,
     reps: Math.max(1, Math.round(adjustedReps)),
-    progress: normalized,
+    progress: clamp(elapsedDays / totalDays, 0, 1),
     baseReps,
     repModifier,
   };
