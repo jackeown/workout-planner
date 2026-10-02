@@ -21,6 +21,7 @@ const appState = {
   selectedDate: formatDateKey(today),
   monthDate: new Date(today.getFullYear(), today.getMonth(), 1),
   activities: loadActivities(),
+  editingActivityId: null,
 };
 
 function saveActivities() {
@@ -71,6 +72,32 @@ function clamp(value, min, max) {
 
 function linearInterpolate(start, end, progress) {
   return start + (end - start) * progress;
+}
+
+function getLatestCompletionDate(activity) {
+  if (!activity.completedDates || activity.completedDates.length === 0) {
+    return null;
+  }
+  return activity.completedDates[activity.completedDates.length - 1];
+}
+
+function getLastKnownStats(activity) {
+  const lastDate = getLatestCompletionDate(activity);
+  if (!lastDate) {
+    return {
+      sets: activity.currentSets,
+      reps: activity.currentReps,
+      date: today,
+    };
+  }
+
+  const lastDateObj = parseDateKey(lastDate);
+  const plan = getPlanForDate(activity, lastDate);
+  return {
+    sets: plan.sets,
+    reps: plan.reps,
+    date: lastDateObj,
+  };
 }
 
 function getSetProgressionEvents(activity) {
@@ -248,6 +275,10 @@ function renderActivities() {
             </button>
           </div>
           <div class="activity-target">Workouts logged: ${doneCount}</div>
+          <div class="activity-card-actions">
+            <button class="action-btn edit-btn" type="button" data-action="edit" data-id="${activity.id}">Edit goal</button>
+            <button class="action-btn delete-btn" type="button" data-action="delete" data-id="${activity.id}">Delete</button>
+          </div>
         </div>
       `;
     })
@@ -343,6 +374,36 @@ function toggleCompleteForActivity(activityId) {
   renderAll();
 }
 
+function deleteActivity(activityId) {
+  if (!confirm('Delete this exercise? This cannot be undone.')) {
+    return;
+  }
+
+  appState.activities = appState.activities.filter((a) => a.id !== activityId);
+  saveActivities();
+  renderAll();
+}
+
+function editActivity(activityId) {
+  const activity = appState.activities.find((a) => a.id === activityId);
+  if (!activity) return;
+
+  const lastKnown = getLastKnownStats(activity);
+
+  exerciseNameInput.value = activity.name;
+  currentSetsInput.value = lastKnown.sets;
+  currentRepsInput.value = lastKnown.reps;
+  targetDateInput.value = activity.targetDate;
+  targetSetsInput.value = activity.targetSets;
+  targetRepsInput.value = activity.targetReps;
+
+  appState.editingActivityId = activityId;
+
+  // Scroll to form
+  document.getElementById('planner-panel').scrollIntoView({ behavior: 'smooth' });
+  exerciseNameInput.focus();
+}
+
 function renderAll() {
   renderPlanForSelectedDate();
   renderActivities();
@@ -376,7 +437,23 @@ form.addEventListener('submit', (event) => {
     return;
   }
 
-  appState.activities.push(createActivity(payload));
+  if (appState.editingActivityId) {
+    // Update existing activity
+    const activity = appState.activities.find((a) => a.id === appState.editingActivityId);
+    if (activity) {
+      activity.name = payload.name.trim();
+      activity.currentSets = Number(payload.currentSets);
+      activity.currentReps = Number(payload.currentReps);
+      activity.targetDate = payload.targetDate;
+      activity.targetSets = Number(payload.targetSets);
+      activity.targetReps = Number(payload.targetReps);
+    }
+    appState.editingActivityId = null;
+  } else {
+    // Create new activity
+    appState.activities.push(createActivity(payload));
+  }
+
   saveActivities();
   form.reset();
   setTargetDateDefault();
@@ -384,12 +461,21 @@ form.addEventListener('submit', (event) => {
 });
 
 document.addEventListener('click', (event) => {
-  const element = event.target.closest('[data-action="toggle-complete"]');
+  const element = event.target.closest('[data-action]');
   if (!element) {
     return;
   }
 
-  toggleCompleteForActivity(element.dataset.id);
+  const action = element.dataset.action;
+  const id = element.dataset.id;
+
+  if (action === 'toggle-complete') {
+    toggleCompleteForActivity(id);
+  } else if (action === 'delete') {
+    deleteActivity(id);
+  } else if (action === 'edit') {
+    editActivity(id);
+  }
 });
 
 prevMonthButton.addEventListener('click', () => {
